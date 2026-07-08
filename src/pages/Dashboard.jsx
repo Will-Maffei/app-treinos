@@ -114,8 +114,11 @@ function NovoAlunoModal({ personalId, onClose, onCreated }) {
           <input id="nome" value={nome} onChange={(e) => setNome(e.target.value)} required autoFocus />
         </div>
         <div className="field">
-          <label htmlFor="email">Email (opcional)</label>
-          <input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+          <label htmlFor="email">Email do aluno</label>
+          <input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+          <span style={{ fontSize: 12, color: 'var(--ink-faint)' }}>
+            O aluno vai usar esse email para criar a senha dele no Portal do Aluno.
+          </span>
         </div>
         <div className="field">
           <label htmlFor="objetivo">Objetivo (opcional)</label>

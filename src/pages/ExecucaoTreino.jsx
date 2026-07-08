@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
 import { toEmbedUrl } from '../utils/video'
 
-export default function ExecucaoTreino() {
+export default function ExecucaoTreino({ basePath = '/treinos' }) {
   const { id } = useParams()
   const navigate = useNavigate()
 
@@ -98,7 +98,7 @@ export default function ExecucaoTreino() {
     setFinalizing(true)
     await supabase.from('treino_execucoes').update({ concluido: true }).eq('id', id)
     setFinalizing(false)
-    navigate(`/treinos/${treino.id}`)
+    navigate(`${basePath}/${treino.id}`)
   }
 
   if (loading) return <div className="loading-line">Carregando...</div>
@@ -109,7 +109,7 @@ export default function ExecucaoTreino() {
   return (
     <div>
       <p className="breadcrumb">
-        <Link to={`/treinos/${treino?.id}`}>← {treino?.nome}</Link>
+        <Link to={`${basePath}/${treino?.id}`}>← {treino?.nome}</Link>
       </p>
 
       <div className="page-header">

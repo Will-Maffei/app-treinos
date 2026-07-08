@@ -46,6 +46,9 @@ export default function AlunoDetail() {
           <p className="eyebrow">{aluno.objetivo || 'Aluno'}</p>
           <h1 className="page-title">{aluno.nome}</h1>
           <p className="page-subtitle">{aluno.email || 'Sem email cadastrado'}</p>
+          <span className={`badge ${aluno.user_id ? 'badge-success' : 'badge-muted'}`} style={{ marginTop: 10, display: 'inline-flex' }}>
+            {aluno.user_id ? 'Conta de acesso vinculada' : 'Aguardando aluno criar a conta'}
+          </span>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <button className="btn btn-ghost" onClick={handleRemoveAluno}>Remover aluno</button>

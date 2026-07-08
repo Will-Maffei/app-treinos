@@ -2,14 +2,14 @@ import { useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
-export default function Login() {
+export default function AlunoLogin() {
   const { session, role, signIn } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
-  if (session && role === 'personal') return <Navigate to="/" replace />
+  if (session && role === 'aluno') return <Navigate to="/aluno" replace />
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -27,6 +27,9 @@ export default function Login() {
           <span className="brand-mark" />
           <span className="brand-title">TREINO</span>
         </div>
+        <p style={{ textAlign: 'center', marginTop: -12, marginBottom: 24, fontSize: 13, color: 'var(--ink-soft)' }}>
+          Portal do aluno
+        </p>
 
         {error && <div className="auth-error">{error}</div>}
 
@@ -57,8 +60,11 @@ export default function Login() {
           </button>
         </form>
 
-        <p style={{ textAlign: 'center', fontSize: 12, marginTop: 18 }}>
-          <Link to="/aluno/login" style={{ color: 'var(--ink-faint)' }}>Sou aluno, quero ver meu treino</Link>
+        <p style={{ textAlign: 'center', fontSize: 13, marginTop: 18, color: 'var(--ink-soft)' }}>
+          Primeiro acesso? <Link to="/aluno/cadastro" style={{ color: 'var(--accent)', fontWeight: 600 }}>Criar minha senha</Link>
+        </p>
+        <p style={{ textAlign: 'center', fontSize: 12, marginTop: 8 }}>
+          <Link to="/login" style={{ color: 'var(--ink-faint)' }}>Sou o personal trainer</Link>
         </p>
       </div>
     </div>
