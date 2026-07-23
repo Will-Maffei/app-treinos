@@ -10,6 +10,7 @@ export default function ExecucaoTreino({ basePath = '/treinos' }) {
   const [execucao, setExecucao] = useState(null)
   const [treino, setTreino] = useState(null)
   const [checks, setChecks] = useState([])
+  const [anteriorMap, setAnteriorMap] = useState(new Map())
   const [loading, setLoading] = useState(true)
   const [finalizing, setFinalizing] = useState(false)
   const [openVideoId, setOpenVideoId] = useState(null)
@@ -112,9 +113,52 @@ export default function ExecucaoTreino({ basePath = '/treinos' }) {
       return { item, check, series }
     })
 
+    // Busca o último treino concluído (antes deste) para mostrar como referência
+    // ao lado de cada série (ex: "Anterior: 10 reps × 50kg")
+    const novoAnteriorMap = new Map()
+    const { data: execucaoAnterior } = await supabase
+      .from('treino_execucoes')
+      .select('id')
+      .eq('treino_id', execucaoData.treino_id)
+      .eq('aluno_id', execucaoData.aluno_id)
+      .eq('concluido', true)
+      .neq('id', id)
+      .order('data_execucao', { ascending: false })
+      .order('criado_em', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    if (execucaoAnterior) {
+      const { data: exerciciosAnteriores } = await supabase
+        .from('execucao_exercicios')
+        .select('id, treino_exercicio_id')
+        .eq('execucao_id', execucaoAnterior.id)
+
+      const idsAnteriores = (exerciciosAnteriores || []).map((e) => e.id)
+
+      if (idsAnteriores.length > 0) {
+        const { data: seriesAnteriores } = await supabase
+          .from('execucao_series')
+          .select('*')
+          .in('execucao_exercicio_id', idsAnteriores)
+
+        const porExecucaoExercicioId = new Map(
+          (exerciciosAnteriores || []).map((e) => [e.id, e.treino_exercicio_id])
+        )
+
+        for (const s of seriesAnteriores || []) {
+          const treinoExercicioId = porExecucaoExercicioId.get(s.execucao_exercicio_id)
+          if (!treinoExercicioId) continue
+          if (!novoAnteriorMap.has(treinoExercicioId)) novoAnteriorMap.set(treinoExercicioId, new Map())
+          novoAnteriorMap.get(treinoExercicioId).set(s.numero_serie, s)
+        }
+      }
+    }
+
     setExecucao(execucaoData)
     setTreino(treinoData)
     setChecks(listaChecks)
+    setAnteriorMap(novoAnteriorMap)
     setLoading(false)
   }
 
@@ -237,64 +281,86 @@ export default function ExecucaoTreino({ basePath = '/treinos' }) {
             )}
 
             <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {series.map((serie, index) => (
-                <div
-                  key={serie.id}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 10,
-                    padding: '8px 10px',
-                    borderRadius: 'var(--radius-sm)',
-                    background: serie.concluida ? 'var(--success-soft)' : 'var(--surface-alt)',
-                  }}
-                >
-                  <button
-                    className="check-toggle"
-                    style={{ width: 26, height: 26, fontSize: 13, flexShrink: 0 }}
-                    onClick={() => toggleSerieConcluida(check, serie)}
-                    aria-label={`Marcar série ${index + 1} como concluída`}
+              {series.map((serie, index) => {
+                const anterior = anteriorMap.get(item.id)?.get(serie.numero_serie)
+                const anteriorTexto = anterior
+                  ? `${anterior.carga_kg != null ? `${anterior.carga_kg}kg` : '—'} × ${anterior.repeticoes ?? '—'}`
+                  : null
+
+                return (
+                  <div
+                    key={serie.id}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 10,
+                      padding: '8px 10px',
+                      borderRadius: 'var(--radius-sm)',
+                      background: serie.concluida ? 'var(--success-soft)' : 'var(--surface-alt)',
+                      flexWrap: 'wrap',
+                    }}
                   >
-                    {serie.concluida ? '✓' : ''}
-                  </button>
+                    <button
+                      className="check-toggle"
+                      style={{ width: 26, height: 26, fontSize: 13, flexShrink: 0 }}
+                      onClick={() => toggleSerieConcluida(check, serie)}
+                      aria-label={`Marcar série ${index + 1} como concluída`}
+                    >
+                      {serie.concluida ? '✓' : ''}
+                    </button>
 
-                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--ink-soft)', width: 52, flexShrink: 0 }}>
-                    Série {index + 1}
-                  </span>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--ink-soft)', width: 52, flexShrink: 0 }}>
+                      Série {index + 1}
+                    </span>
 
-                  <input
-                    type="number"
-                    min="0"
-                    placeholder="reps"
-                    value={serie.repeticoes ?? ''}
-                    onChange={(e) => updateSerieCampo(check, serie.id, 'repeticoes', e.target.value)}
-                    onBlur={(e) => salvarSerieCampo(serie.id, 'repeticoes', e.target.value === '' ? null : Number(e.target.value))}
-                    style={{ width: 64, border: '1.5px solid var(--border)', borderRadius: 6, padding: '6px 8px' }}
-                  />
-                  <span style={{ fontSize: 12, color: 'var(--ink-faint)' }}>reps ×</span>
+                    <input
+                      type="number"
+                      min="0"
+                      placeholder={anterior?.repeticoes != null ? String(anterior.repeticoes) : 'reps'}
+                      value={serie.repeticoes ?? ''}
+                      onChange={(e) => updateSerieCampo(check, serie.id, 'repeticoes', e.target.value)}
+                      onBlur={(e) => salvarSerieCampo(serie.id, 'repeticoes', e.target.value === '' ? null : Number(e.target.value))}
+                      style={{ width: 64, border: '1.5px solid var(--border)', borderRadius: 6, padding: '6px 8px' }}
+                    />
+                    <span style={{ fontSize: 12, color: 'var(--ink-faint)' }}>reps ×</span>
 
-                  <input
-                    type="number"
-                    step="0.5"
-                    min="0"
-                    placeholder="kg"
-                    value={serie.carga_kg ?? ''}
-                    onChange={(e) => updateSerieCampo(check, serie.id, 'carga_kg', e.target.value)}
-                    onBlur={(e) => salvarSerieCampo(serie.id, 'carga_kg', e.target.value === '' ? null : Number(e.target.value))}
-                    style={{ width: 72, border: '1.5px solid var(--border)', borderRadius: 6, padding: '6px 8px' }}
-                  />
-                  <span style={{ fontSize: 12, color: 'var(--ink-faint)' }}>kg</span>
+                    <input
+                      type="number"
+                      step="0.5"
+                      min="0"
+                      placeholder={anterior?.carga_kg != null ? String(anterior.carga_kg) : 'kg'}
+                      value={serie.carga_kg ?? ''}
+                      onChange={(e) => updateSerieCampo(check, serie.id, 'carga_kg', e.target.value)}
+                      onBlur={(e) => salvarSerieCampo(serie.id, 'carga_kg', e.target.value === '' ? null : Number(e.target.value))}
+                      style={{ width: 72, border: '1.5px solid var(--border)', borderRadius: 6, padding: '6px 8px' }}
+                    />
+                    <span style={{ fontSize: 12, color: 'var(--ink-faint)' }}>kg</span>
 
-                  <button
-                    className="icon-btn"
-                    title="Remover série"
-                    style={{ marginLeft: 'auto', width: 26, height: 26 }}
-                    onClick={() => removerSerie(check, serie.id)}
-                  >
-                    ✕
-                  </button>
-                </div>
-              ))}
+                    <button
+                      className="icon-btn"
+                      title="Remover série"
+                      style={{ marginLeft: 'auto', width: 26, height: 26 }}
+                      onClick={() => removerSerie(check, serie.id)}
+                    >
+                      ✕
+                    </button>
+
+                    {anteriorTexto && (
+                      <span
+                        style={{
+                          width: '100%',
+                          fontSize: 11,
+                          color: 'var(--ink-faint)',
+                          fontFamily: 'var(--font-mono)',
+                          paddingLeft: 88,
+                        }}
+                      >
+                        Última vez: {anteriorTexto}
+                      </span>
+                    )}
+                  </div>
+                )
+              })}
 
               <button
                 className="btn btn-ghost btn-sm"
