@@ -34,6 +34,12 @@ export default function AlunoDetail() {
     navigate('/')
   }
 
+  async function handleRemoveTreino(treino) {
+    if (!confirm(`Remover o treino "${treino.nome}"? Isso também apaga o histórico de execuções desse treino. Essa ação não pode ser desfeita.`)) return
+    await supabase.from('treinos').delete().eq('id', treino.id)
+    setTreinos((prev) => prev.filter((t) => t.id !== treino.id))
+  }
+
   if (loading) return <div className="loading-line">Carregando...</div>
   if (!aluno) return <div className="empty-state"><strong>Aluno não encontrado</strong></div>
 
@@ -66,12 +72,22 @@ export default function AlunoDetail() {
       {treinos.length > 0 && (
         <div className="grid-cards">
           {treinos.map((treino) => (
-            <Link key={treino.id} to={`/treinos/${treino.id}`} className="card card-link">
-              <h3 style={{ margin: '0 0 4px', fontSize: 17, fontWeight: 700 }}>{treino.nome}</h3>
-              <p style={{ margin: 0, fontSize: 13, color: 'var(--ink-soft)' }}>
-                {treino.descricao || 'Sem descrição'}
-              </p>
-            </Link>
+            <div key={treino.id} className="card" style={{ position: 'relative' }}>
+              <button
+                className="icon-btn"
+                title="Remover treino"
+                onClick={() => handleRemoveTreino(treino)}
+                style={{ position: 'absolute', top: 14, right: 14 }}
+              >
+                ✕
+              </button>
+              <Link to={`/treinos/${treino.id}`} style={{ display: 'block', paddingRight: 30 }}>
+                <h3 style={{ margin: '0 0 4px', fontSize: 17, fontWeight: 700 }}>{treino.nome}</h3>
+                <p style={{ margin: 0, fontSize: 13, color: 'var(--ink-soft)' }}>
+                  {treino.descricao || 'Sem descrição'}
+                </p>
+              </Link>
+            </div>
           ))}
         </div>
       )}
