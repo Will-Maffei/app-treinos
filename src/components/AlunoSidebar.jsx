@@ -1,3 +1,4 @@
+import { NavLink } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
 export default function AlunoSidebar() {
@@ -11,7 +12,12 @@ export default function AlunoSidebar() {
       </div>
 
       <nav className="sidebar-nav">
-        <span className="nav-link active">Meus treinos</span>
+        <NavLink to="/aluno" end className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}>
+          Meus treinos
+        </NavLink>
+        <NavLink to="/aluno/historico" className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}>
+          Histórico
+        </NavLink>
       </nav>
 
       <div className="sidebar-footer">

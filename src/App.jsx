@@ -5,6 +5,7 @@ import Sidebar from './components/Sidebar'
 import AlunoSidebar from './components/AlunoSidebar'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
+import PersonalDashboard from './pages/PersonalDashboard'
 import AlunoDetail from './pages/AlunoDetail'
 import TreinoEditor from './pages/TreinoEditor'
 import ExecucaoTreino from './pages/ExecucaoTreino'
@@ -13,6 +14,7 @@ import AlunoLogin from './pages/AlunoLogin'
 import AlunoCadastro from './pages/AlunoCadastro'
 import AlunoDashboard from './pages/AlunoDashboard'
 import AlunoTreinoDetail from './pages/AlunoTreinoDetail'
+import AlunoHistorico from './pages/AlunoHistorico'
 
 function Layout({ children, aluno = false }) {
   return (
@@ -36,6 +38,14 @@ export default function App() {
             element={
               <ProtectedRoute role="personal">
                 <Layout><Dashboard /></Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute role="personal">
+                <Layout><PersonalDashboard /></Layout>
               </ProtectedRoute>
             }
           />
@@ -81,6 +91,14 @@ export default function App() {
             element={
               <ProtectedRoute role="aluno">
                 <Layout aluno><AlunoDashboard /></Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/aluno/historico"
+            element={
+              <ProtectedRoute role="aluno">
+                <Layout aluno><AlunoHistorico /></Layout>
               </ProtectedRoute>
             }
           />

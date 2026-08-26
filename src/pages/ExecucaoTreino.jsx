@@ -212,7 +212,7 @@ export default function ExecucaoTreino({ basePath = '/treinos' }) {
 
   async function handleFinalizar() {
     setFinalizing(true)
-    await supabase.from('treino_execucoes').update({ concluido: true }).eq('id', id)
+    await supabase.from('treino_execucoes').update({ concluido: true, concluido_em: new Date().toISOString() }).eq('id', id)
     setFinalizing(false)
     navigate(`${basePath}/${treino.id}`)
   }
